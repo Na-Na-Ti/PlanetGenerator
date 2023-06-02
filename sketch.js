@@ -10,7 +10,7 @@ let colors = []; // array of colors
      // colors = [color("#008dc4"), color("#00a9cc"), color("#eecda3"), color("#7ec850"), color("#676767"), color("#fffafa")]; // colors for the planet
      colors = [
       [color("#008dc4"), color("#00a9cc"), color("#eecda3"), color("#7ec850"), color("#676767"), color("#fffafa")],
-      [color("#FF0000"), color("#00FF00"), color("#0000FF"), color("#FFFF00"), color("#00FFFF"), color("#FF00FF")],
+    [color("#DB6853"), color("#8CEA79"), color("#B66EF5"), color("#F5D15F"), color("#6AE7EB"), color("#DB66F5")],
       //Preciso adicionar mais cores aqui
     ];
    // let colorArrayOrder = [...Array(colors.length).keys()];  // Create an array from 0 to colors.length
@@ -22,8 +22,10 @@ let colors = []; // array of colors
       for (let i = 0; i < 10; i++) { // create 10 textures
         let seedX = random(0, 1000); // random seed for x
         let seedY = random(0, 1000); // random seed for y 
-        let colorArray1 = colors[i % colors.length];
-        let colorArray2 = colors[(i+1) % colors.length];
+      //  let colorArray1 = colors[i % colors.length];
+       // let colorArray2 = colors[(i+1) % colors.length];
+      let colorArray1 = customShuffle(colors[i % colors.length]).slice(0, 5);
+      let colorArray2 = customShuffle(colors[(i+1) % colors.length]).slice(0, 5);
         textures[i] = defTexture(1000, 1000, seedX, seedY, colorArray1, colorArray2);
       }
       noStroke(); // no stroke on the planets
@@ -34,7 +36,7 @@ let colors = []; // array of colors
 --------------------------------------------------------DRAW-------------------------------------------------------*/
 
     function draw() {
-      background(220); // background color, vou substituir por um mapa estrelado depois, mas por enquanto é isso
+      background(0); // background color, vou substituir por um mapa estrelado depois, mas por enquanto é isso
       
       let columns = Math.floor(Math.sqrt(textures.length)); // number of columns
       let rows = Math.ceil(textures.length / columns); // number of rows
@@ -75,10 +77,11 @@ let colors = []; // array of colors
             // Noise value using fBm, with 4 octaves and a lacunarity of 2. fBm is a fractal noise function, that is, a noise function that is composed of 
             let h = 0; // height value
             let amplitude = 0.5; // amplitude value
-            for(let i = 0; i < 4; i++){ // for each octave  
+            for(let i = 0; i < 4; i++){ // for each octave, calculate the height value. An octave is a noise function with a frequency and an amplitude 
               h += amplitude * (simplex.noise3D(seedX + nx * pow(2, i), seedY + ny * pow(2, i), nz * pow(2, i)) + 1) / 2; // calculate the height value using the noise function 
               amplitude *= 0.5; // decrease the amplitude
             }
+            h = map(h, 0, 1, 0, 1); // map the height value to a value between 0 and 1
             let c1 = pickColor(h, colorArray1);  // Get color from first color array
             let c2 = pickColor(h, colorArray2);  // Get color from second color array
             let mix = (sin(h * PI) + 1) / 2;  // Blend factor, vary between 0 and 1
@@ -92,11 +95,28 @@ let colors = []; // array of colors
       }
 
       function pickColor(h, colorArray) { // Pick a color from the color array based on the height value
-        let thresholds = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7]; // Thresholds for the height values
-        for(let i=0; i<thresholds.length; i++) { 
-          if(h < thresholds[i+1]) { // If the height value is between two thresholds 
-            return lerpColor(colorArray[i], colorArray[i+1], (h - thresholds[i])/(thresholds[i+1] - thresholds[i])); // Return the color between the two colors based on the height value 
-          }
+       // let thresholds = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7]; // Thresholds for the height values
+       let index = floor(h * (colorArray.length - 1)); // Index of the color in the color array
+       let color1 = colorArray[index]; // color 1 
+       let color2 = colorArray[min(index + 1, colorArray.length - 1)]; // color 2, if the index is the last index, use the last color in the array
+       let factor = (h * (colorArray.length - 1)) - index; // factor to blend the two colors, based on the height value
+  
+       return lerpColor(color1, color2, factor);
+      // for(let i=0; i<thresholds.length; i++) { 
+      //    if(h < thresholds[i+1]) { // If the height value is between two thresholds 
+      //      return lerpColor(colorArray[i], colorArray[i+1], (h - thresholds[i])/(thresholds[i+1] - thresholds[i])); // Return the color between the two colors based on the height value 
+      //    }
+      //  }
+       // return colorArray[colorArray.length-1]; // If the height value is greater than the last threshold, return the last color
+      }
+      function customShuffle(array) { // Shuffle the array, but keep the first and last elements in place 
+        let currentIndex = array.length, temporaryValue, randomIndex; // While there remain elements to shuffle
+        while (0 !== currentIndex) { // Pick a remaining element
+          randomIndex = Math.floor(Math.random() * currentIndex); // And swap it with the current element
+          currentIndex -= 1; // decrease the current index
+          temporaryValue = array[currentIndex]; // save the current element
+          array[currentIndex] = array[randomIndex]; // swap the current element with the random element
+          array[randomIndex] = temporaryValue; // swap the random element with the current element
         }
-        return colorArray[colorArray.length-1]; // If the height value is greater than the last threshold, return the last color
+        return array; // return the shuffled array
       }
