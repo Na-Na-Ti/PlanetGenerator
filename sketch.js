@@ -1,8 +1,21 @@
+// 1. noise functions: https://thebookofshaders.com/11/ (Tirei muita coisa desse site, me salvou)
+// 2. simplex noise: https://en.wikipedia.org/wiki/Simplex_noise
+// 3. noise functions in p5.js: https://p5js.org/reference/#/p5/noise
+// 4. quaternion: https://en.wikipedia.org/wiki/Quaternion
+// 5. spherical coordinates: https://en.wikipedia.org/wiki/Spherical_coordinate_system
+// 6. fBm: https://thebookofshaders.com/13/
+// 7. lacunarity: https://thebookofshaders.com/13/
+// 8. octaves: https://thebookofshaders.com/13/
+
+
 //--------------------------------------------lets and arrays--------------------------------------------------------
 
 let simplex; //simplex noise object
 let textures = []; // array of textures
 let colors = []; // array of colors
+let planetSizes = []; // array for storing different sizes for each planet
+let cloudTextures = [];
+
 
 /*------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------SETUP-------------------------------------------------------*/
@@ -18,18 +31,21 @@ let colors = []; // array of colors
 
       simplex = new SimplexNoise();   // create simplex noise object
 
-      createCanvas(800, 800, WEBGL); // create canvas
-      for (let i = 0; i < 10; i++) { // create 10 textures
-        let seedX = random(0, 1000); // random seed for x
-        let seedY = random(0, 1000); // random seed for y 
+      createCanvas(900, 900, WEBGL); // create canvas
+      for (let i = 0; i < 9; i++) { // create 10 textures
+        let seedX = random(0, 10000); // random seed for x
+        let seedY = random(0, 10000); // random seed for y 
+       // cloudTextures[i] = generateCloudTexture(1000, 1000);
       //  let colorArray1 = colors[i % colors.length];
        // let colorArray2 = colors[(i+1) % colors.length];
-      let colorArray1 = customShuffle(colors[i % colors.length]).slice(0, 5);
-      let colorArray2 = customShuffle(colors[(i+1) % colors.length]).slice(0, 5);
+      let colorArray1 = customShuffle(colors[i % colors.length]).slice(0, 5); // shuffle the colors and get the first 5, the slice function is used to not change the original array
+      let colorArray2 = customShuffle(colors[(i+1) % colors.length]).slice(0, 5); //same thing as before, but for the second color array
         textures[i] = defTexture(1000, 1000, seedX, seedY, colorArray1, colorArray2);
+        planetSizes[i] = random(30, 100); // create random size for each planet
       }
       noStroke(); // no stroke on the planets
       lights();  // luuuuuuuuuuuz
+      //sphere(random(30,60)); // draw the planet
     }
 
 /*------------------------------------------------------------------------------------------------------------------
@@ -51,7 +67,10 @@ let colors = []; // array of colors
         translate(x - width / 2, y - height / 2); // translate to the position
         rotateY(frameCount * 0.01); // rotate the planet
         texture(textures[i]); // set the texture
-        sphere(60); // draw the planet
+        sphere(planetSizes[i]); // draw the planet with the defined size
+      //  texture(cloudTextures[i]); // set the cloud texture
+       // sphere(planetSize);
+        // sphere(); // draw the planet
         pop();  // pop to not affect the other planets
       }
     }
@@ -78,7 +97,7 @@ let colors = []; // array of colors
             let h = 0; // height value
             let amplitude = 0.5; // amplitude value
             for(let i = 0; i < 4; i++){ // for each octave, calculate the height value. An octave is a noise function with a frequency and an amplitude 
-              h += amplitude * (simplex.noise3D(seedX + nx * pow(2, i), seedY + ny * pow(2, i), nz * pow(2, i)) + 1) / 2; // calculate the height value using the noise function 
+              h += amplitude * (simplex.noise3D(seedX + nx * pow(2, i), seedY + ny * pow(2, i), nz * pow(2, i)) + noise(nx, ny, nz) + 1) / 3; // calculate the height value using the noise function 
               amplitude *= 0.5; // decrease the amplitude
             }
             h = map(h, 0, 1, 0, 1); // map the height value to a value between 0 and 1
@@ -93,6 +112,30 @@ let colors = []; // array of colors
         t.updatePixels(); // update the pixels
         return t; // return the texture
       }
+
+      // function generateCloudTexture(wid, hei) {
+      //   let cl = createImage(wid, hei);
+      //   cl.loadPixels();
+
+      //   for (let y = 0; y < cl.height; y++) { // for each pixel in the image
+      //     for (let x = 0; x < cl.width; x++) {
+      //       let nx = map(x, 0, cl.width, 0, 1); // map the x value to the x value of the normal vector
+      //       let ny = map(y, 0, cl.height, 0, 1); // map the y value to the y value of the normal vector
+
+      //       let n = (simplex.noise3D(nx * 3, ny * 3) + 1) * 0.5 * 0.7 +  // noise value using fBm, with 3 octaves and a lacunarity of 2
+      //               (simplex.noise3D(nx * 15, ny * 15) + 1) * 0.5 * 0.2 + // noise value using fBm, with 15 octaves and a lacunarity of 2
+      //               (simplex.noise3D(nx * 30, ny * 30) + 1) * 0.5 * 0.1; // noise value using fBm, with 30 octaves and a lacunarity of 2
+     
+      //     let c = color(random(255), random(255), random(255), 0.5); 
+      //     c.setAlpha(map(n, 0, 1, 0, 255)); // alpha value based on the noise value
+      //     cl.set(x, y, c); // set the pixel color
+      //     }
+      //   }
+      //   cl.updatePixels(); // update the pixels
+      //   return cl; // return the cloud texture
+        
+      // }
+    
 
       function pickColor(h, colorArray) { // Pick a color from the color array based on the height value
        // let thresholds = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7]; // Thresholds for the height values
