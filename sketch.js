@@ -16,8 +16,10 @@ let cloudTextures = [];
      // colors = [color("#008dc4"), color("#00a9cc"), color("#eecda3"), color("#7ec850"), color("#676767"), color("#fffafa")]; // colors for the planet
      colors = [
       [color("#008dc4"), color("#00a9cc"), color("#eecda3"), color("#7ec850"), color("#676767"), color("#fffafa")],
-    [color("#DB6853"), color("#8CEA79"), color("#B66EF5"), color("#F5D15F"), color("#6AE7EB"), color("#DB66F5")],
-      //Preciso adicionar mais cores aqui
+      [color("#DB6853"), color("#8CEA79"), color("#B66EF5"), color("#F5D15F"), color("#6AE7EB"), color("#DB66F5")],
+      [color("#ECD67D"), color("#5867AE"), color("#3E7C34"), color("#242E5D"), color("#774724"), color("#84D0F0")], 
+      [color("#D4BF64"), color("#858DC5"), color("#E7EBEC"), color("#FCBF0A"), color("#EF7917"), color("#C8E6EC")],
+      [color("#D4C99C"), color("#EAEAEA"), color("#B8CBD6"), color("#C28447"), color("#4A120C"), color("#9FC4CB")],
     ];
    // let colorArrayOrder = [...Array(colors.length).keys()];  // Create an array from 0 to colors.length
     //shuffle(colorArrayOrder, true);  // Randomly shuffle the array
@@ -31,8 +33,9 @@ let cloudTextures = [];
        // cloudTextures[i] = generateCloudTexture(1000, 1000);
       //  let colorArray1 = colors[i % colors.length];
        // let colorArray2 = colors[(i+1) % colors.length];
-      let colorArray1 = customShuffle(colors[i % colors.length]).slice(0, 5); // shuffle the colors and get the first 5, the slice function is used to not change the original array
-      let colorArray2 = customShuffle(colors[(i+1) % colors.length]).slice(0, 5); //same thing as before, but for the second color array
+      let colorArray1 = customShuffle(colors[i % colors.length]).slice(0, 30); // shuffle the colors and get the first 5, the slice function is used to not change the original array
+      let colorArray2 = customShuffle(colors[(i+1) % colors.length]).slice(0, 30); //same thing as before, but for the second color array
+       let octaves = floor(random(1, 8));
         textures[i] = defTexture(1000, 1000, seedX, seedY, colorArray1, colorArray2);
         planetSizes[i] = random(30, 100); // create random size for each planet
       }
@@ -71,7 +74,7 @@ let cloudTextures = [];
 
 /*------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------FUNCTIONS-------------------------------------------------------*/
-      function defTexture(wid=1000, hei=1000, seedX=0, seedY=0, colorArray1, colorArray2) { /* function to create the texture, with default values for 
+      function defTexture(wid=1000, hei=1000, seedX=0, seedY=0, colorArray1, colorArray2, octaves) { /* function to create the texture, with default values for 
       the width and height of the texture and the seeds for the noise function */
         let t = createImage(wid, hei); // create the image with the width and height
         t.loadPixels(); // load the pixels
