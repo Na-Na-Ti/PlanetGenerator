@@ -1,11 +1,4 @@
-// 1. noise functions: https://thebookofshaders.com/11/ (Tirei muita coisa desse site, me salvou)
-// 2. simplex noise: https://en.wikipedia.org/wiki/Simplex_noise
-// 3. noise functions in p5.js: https://p5js.org/reference/#/p5/noise
-// 4. quaternion: https://en.wikipedia.org/wiki/Quaternion
-// 5. spherical coordinates: https://en.wikipedia.org/wiki/Spherical_coordinate_system
-// 6. fBm: https://thebookofshaders.com/13/
-// 7. lacunarity: https://thebookofshaders.com/13/
-// 8. octaves: https://thebookofshaders.com/13/
+
 
 
 //--------------------------------------------lets and arrays--------------------------------------------------------
