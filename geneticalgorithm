@@ -13,8 +13,18 @@ class Planet {
     this.octavesCloud = octavesCloud;
     this.size = size;
 
-    this.texture = defTexture(1000, 1000, this.seedX, this.seedY, this.colorArray1, this.colorArray2, this.octaves);
-    this.cloudTexture = generateCloudTexture(1000, 1000, this.seedXCloud, this.seedYCloud, this.colorArray1Cloud, this.colorArray2Cloud, this.octavesCloud);
+    this.initTextures();
+  }
+  async initTextures() {
+    [this.texture, this.cloudTexture] = await Promise.all([
+      this.genTexture(this.seedX, this.seedY, this.colorArray1, this.colorArray2, this.octaves),
+      this.genTexture(this.seedXCloud, this.seedYCloud, this.colorArray1Cloud, this.colorArray2Cloud, this.octavesCloud)
+    ]);
+  }
+
+  async genTexture(seedX, seedY, colorArray1, colorArray2, octaves) {
+    let t = await defTexture(200, 200, seedX, seedY, colorArray1, colorArray2, octaves);
+    return t;
   }
 
   crossover(partner) {
@@ -34,30 +44,33 @@ class Planet {
     return child;
   }
 
-  mutate() {
+  async mutate() {
     if (random() < 0.01) {
-      this.seedX = random(0, 1000);
-      this.seedY = random(0, 1000);
-      this.seedXCloud = random(0, 1000);
-      this.seedYCloud = random(0, 1000);
+      this.seedX = random(0, 200);
+      this.seedY = random(0, 200);
+      this.seedXCloud = random(0, 200);
+      this.seedYCloud = random(0, 200);
       this.octaves = floor(random(1, 8));
       this.octavesCloud = floor(random(1, 4));
       this.size = random(30, 100);
 
-      this.texture = defTexture(1000, 1000, this.seedX, this.seedY, this.colorArray1, this.colorArray2, this.octaves);
-      this.cloudTexture = generateCloudTexture(1000, 1000, this.seedXCloud, this.seedYCloud, this.colorArray1Cloud, this.colorArray2Cloud, this.octavesCloud);
+      [this.texture, this.cloudTexture] = await Promise.all([
+        this.genTexture(this.seedX, this.seedY, this.colorArray1, this.colorArray2, this.octaves),
+        this.genTexture(this.seedXCloud, this.seedYCloud, this.colorArray1Cloud, this.colorArray2Cloud, this.octavesCloud)
+      ]);
     }
   }
 }
 
 class Population {
   constructor(colors, populationSize) {
+    this.isGenerating = false;
     this.planets = [];
     for (let i = 0; i < populationSize; i++) {
-      let seedX = random(0, 1000);
-      let seedY = random(0, 1000);
-      let seedXCloud = random(0, 1000);
-      let seedYCloud = random(0, 1000);
+      let seedX = random(0, 200);
+      let seedY = random(0, 200);
+      let seedXCloud = random(0, 200);
+      let seedYCloud = random(0, 200);
       let colorArray1 = customShuffle(colors[i % colors.length]).slice(0, 15);
       let colorArray2 = customShuffle(colors[(i + 1) % colors.length]).slice(0, 15);
       let colorArray1Cloud = customShuffle(colors[i % colors.length]).slice(0, 15);
@@ -70,7 +83,11 @@ class Population {
     }
   }
 
-  createNewGeneration() {
+  async createNewGeneration() {
+    if (this.isGenerating) {
+      return;
+    }
+    this.isGenerating = true;
     let newGeneration = [];
 
     for (let i = 0; i < this.planets.length; i++) {
@@ -79,11 +96,13 @@ class Population {
 
       let child = parent1.crossover(parent2);
       child.mutate();
-
+      await child.initTextures();
       newGeneration.push(child);
+      
     }
 
     this.planets = newGeneration;
+    this.isGenerating = false;
   }
 }
 
@@ -95,6 +114,7 @@ let planetSizes = [];
 let cloudTextures = [];
 let population;
 let populationSize = 9;
+let isEnterKeyPressed = false;
 
     function setup() { 
      colors = [
@@ -109,19 +129,19 @@ let populationSize = 9;
       population = new Population(colors, populationSize); 
       createCanvas(900, 900, WEBGL); 
       for (let i = 0; i < 9; i++) { 
-        let seedX = random(0, 1000); 
-        let seedY = random(0, 1000); 
-        let seedXCloud = random(0, 1000);
-        let seedYCloud = random(0, 1000); 
+        let seedX = random(0, 10); 
+        let seedY = random(0, 10); 
+        let seedXCloud = random(0, 10);
+        let seedYCloud = random(0, 10); 
       let colorArray1 = customShuffle(colors[i % colors.length]).slice(0, 15);  
       let colorArray2 = customShuffle(colors[(i+1) % colors.length]).slice(0, 15); 
       let colorArray1Cloud = customShuffle(colors[i % colors.length]).slice(0, 15); 
     let colorArray2Cloud = customShuffle(colors[(i+1) % colors.length]).slice(0, 15); 
     let octavesCloud = floor(random(1, 4));
        let octaves = floor(random(1, 8));
-        textures[i] = defTexture(1000, 1000, seedX, seedY, colorArray1, colorArray2, octaves);
+        textures[i] = defTexture(200, 200, seedX, seedY, colorArray1, colorArray2, octaves);
         planetSizes[i] = random(30, 100);
-        cloudTextures[i] = generateCloudTexture(1000, 1000, seedXCloud, seedYCloud, colorArray1Cloud, colorArray2Cloud, octavesCloud);         
+        cloudTextures[i] = generateCloudTexture(200, 200, seedXCloud, seedYCloud, colorArray1Cloud, colorArray2Cloud, octavesCloud);         
       }
       noStroke(); 
       lights();      
@@ -147,17 +167,31 @@ let populationSize = 9;
         sphere(population.planets[i].size * 1.02);
         pop();
       }
-      keyPressed();
+      if (isEnterKeyPressed && !population.isGenerating) {
+        population.createNewGeneration();
+      }
     }
 
     function keyPressed() {
-      if (key === ' ') { // if the space bar is pressed
-          population.createNewGeneration();
+      if (keyCode === ENTER) {
+        isEnterKeyPressed = true;
       }
-  }
-  
+    }
+    
+    function keyReleased() {
+      if (keyCode === ENTER) {
+        isEnterKeyPressed = false;
+      }
+    }
+
+    let textureCache = {};
    
-      function defTexture(wid=1000, hei=1000, seedX=0, seedY=0, colorArray1, colorArray2, octaves) { 
+     async function defTexture(wid=200, hei=200, seedX=0, seedY=0, colorArray1, colorArray2, octaves) { 
+        let key = `${wid}-${hei}-${seedX}-${seedY}-${colorArray1.toString()}-${colorArray2.toString()}-${octaves}`;
+        if(textureCache[key]) {
+          return textureCache[key];
+        } 
+        let t = await new Promise((resolve, reject) => {
         let t = createImage(wid, hei);
         t.loadPixels();
         let warpScale = random(0.01, 0.5); 
@@ -190,9 +224,15 @@ let populationSize = 9;
           }
         }
         t.updatePixels(); 
-        return t; 
+        resolve(t); 
+      });
+      textureCache[key] = t;
+      return t; 
       }
+      
+    
       function generateCloudTexture(wid, hei, seedX=0, seedY=0, colorArray1, colorArray2, octavesCloud) {
+        return new Promise((resolve, reject) => {
         let cl = createImage(wid, hei);
         cl.loadPixels();        
         let frequency = random(0.1, 0.3);
@@ -228,7 +268,8 @@ let populationSize = 9;
             }
         }
         cl.updatePixels();
-        return cl;
+         resolve(cl);
+  });
     }
       function pickColor(h, colorArray) { 
        let index = floor(h * (colorArray.length - 1)); 
