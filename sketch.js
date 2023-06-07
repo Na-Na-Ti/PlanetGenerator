@@ -138,8 +138,8 @@ class Population {
     let offsetY = (height - (rows * planetSize)) / 2;
 
 
-    let mouseColumn = Math.floor((mouseX - offsetX));
-    let mouseRow = Math.floor((mouseY - offsetY));
+    let mouseColumn = Math.floor((mouseX - offsetX) / planetSize);
+    let mouseRow = Math.floor((mouseY - offsetY) / planetSize);
 
     if (mouseColumn < 0 || mouseRow < 0 || mouseColumn >= columns || mouseRow >= rows) {
       return -1;
@@ -219,8 +219,6 @@ let isEnterKeyPressed = false;
       lights();      
     }
     function draw() {
-
-      
       background(0); 
 
       let columns = Math.floor(Math.sqrt(textures.length)); 
