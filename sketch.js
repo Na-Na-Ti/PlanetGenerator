@@ -30,7 +30,8 @@ class Planet {
   }
 
   crossover(partner) {
-    let child = new Planet(this.colors,
+    let child = new Planet(
+      this.colors,
       random() > 0.5 ? this.seedX : partner.seedX,
       random() > 0.5 ? this.seedY : partner.seedY,
       random() > 0.5 ? this.seedXCloud : partner.seedXCloud,
@@ -41,13 +42,15 @@ class Planet {
       random() > 0.5 ? this.colorArray2Cloud : partner.colorArray2Cloud,
       random() > 0.5 ? this.octaves : partner.octaves,
       random() > 0.5 ? this.octavesCloud : partner.octavesCloud,
-      random() > 0.5 ? this.size : partner.size);
-
+      random() > 0.5 ? this.size : partner.size
+    );
+  
     return child;
   }
+  
 
   async mutate() {
-    if (random() < 0.01) {
+    if (random() < 0.5) {
       this.seedX = random(0, 200);
       this.seedY = random(0, 200);
       this.seedXCloud = random(0, 200);
@@ -56,7 +59,7 @@ class Planet {
       this.octavesCloud = floor(random(1, 4));
       this.size = random(30, 100);
     }
-    if (random() < 0.01) {
+    if (random() < 0.5) {
       this.colorArray1 = customShuffle(this.colors[colorIndex]).slice(0, 15); // Use this.colors instead of colors
       this.colorArray2 = customShuffle(this.colors[colorIndex]).slice(0, 15); // Use this.colors instead of colors
       this.colorArray1Cloud = customShuffle(this.colors[colorIndex]).slice(0, 15); // Use this.colors instead of colors
@@ -70,7 +73,7 @@ class Planet {
       ]);
     }
   }
-
+  let planetSize_prompt;
 
 class Population {
   constructor(colors, populationSize) {
@@ -88,12 +91,36 @@ class Population {
       let colorArray2Cloud = customShuffle(colors[(i + 1) % colors.length]).slice(0, 15);
       let octavesCloud = floor(random(1, 4));
       let octaves = floor(random(1, 8));
-      let size = random(30, 100);
+      let size = planetSize_prompt;
       this.selected = false;
 
       this.planets.push(new Planet(colors, seedX, seedY, seedXCloud, seedYCloud, colorArray1, colorArray2, colorArray1Cloud, colorArray2Cloud, octaves, octavesCloud, size));
     }
     this.fitness = 0;
+  }
+
+  getSize(inputs) {
+    let sizes = ["small", "medium", "big", "large", "huge"];
+    for (let i = 0; i < inputs.length; i++) {
+      let sizeIndex = sizes.indexOf(inputs[i]);
+      if (sizeIndex !== -1) {
+        return this.getSizeValue(sizeIndex);
+      }
+    }
+  }
+  
+  getSizeValue(index) {
+    switch (index) {
+      case 0:
+        return random(30, 45); // small 
+      case 1:
+        return random(46, 60); // medium
+      case 2:
+      case 3:
+        return random(61, 75); // big or large
+      case 4:
+        return random(76, 100); // huge
+    }
   }
 
   async createNewGeneration() {
@@ -130,54 +157,35 @@ class Population {
       selection -= this.planets[i].fitness;
     }
   }
-  getPlanetIndexAtMousePosition() {
-    let columns = Math.floor(Math.sqrt(this.planets.length));
-    let rows = Math.ceil(this.planets.length / columns);
-    let planetSize = Math.min(width / (columns + 1), height / (rows + 1));
-    let offsetX = (width - (columns * planetSize)) / 2;
-    let offsetY = (height - (rows * planetSize)) / 2;
-
-
-    let mouseColumn = Math.floor((mouseX - offsetX) / planetSize);
-    let mouseRow = Math.floor((mouseY - offsetY) / planetSize);
-
-    if (mouseColumn < 0 || mouseRow < 0 || mouseColumn >= columns || mouseRow >= rows) {
-      return -1;
-  }
-    let index = mouseRow * columns + mouseColumn;
-    if (index >= this.planets.length) {
-    
-      return -1;
-  }
-
-  let planetCenterX = offsetX + (mouseColumn * planetSize) + (planetSize / 2);
-  let planetCenterY = offsetY + (mouseRow * planetSize) + (planetSize / 2);
-
-  let dx = mouseX - planetCenterX;
-  let dy = mouseY - planetCenterY;
-  let distance = Math.sqrt(dx * dx + dy * dy);
-  if (distance > planetSize / 2) {
-    
-    return -1;
-  }
-  return index;
-}
-  
-    selectPlanet(index) {
-      if (index !== -1) { 
-        this.planets[index].selected = !this.planets[index].selected;
+  getPlanetIndexAtKeyPressed() {
+    if (key >= '1' && key <= '9') {
+      let index = int(key) - 1;
+      if (index >= 0 && index < this.planets.length) {
+        return index;
       }
     }
-    highlightPlanet() {
-      let index = this.getPlanetIndexAtMousePosition();
-      this.highlightedPlanet = index !== -1 ? this.planets[index] : null;
+    return -1;
+  }
+
+  selectPlanet(index) {
+    if (index !== -1) {
+      this.planets[index].selected = !this.planets[index].selected;
     }
+  }
+
+  highlightPlanet() {
+    let index = this.getPlanetIndexAtKeyPressed();
+    this.highlightedPlanet = index !== -1 ? this.planets[index] : null;
+  }
     updateFitness() {
       for (let planet of this.planets) {
         planet.fitness = planet.selected ? 1 : 0;
       }
     }
-  }
+
+
+
+}
 
 
 let simplex; 
@@ -189,7 +197,12 @@ let population;
 let populationSize = 9;
 let isEnterKeyPressed = false;
 
+let input = prompt("What kind of planet do you want? (size and color)");
+let inputs = input.split(" ");
+
+
     function setup() { 
+
      colors = [
       [color("#008dc4"), color("#00a9cc"), color("#eecda3"), color("#7ec850"), color("#676767"), color("#fffafa")], 
       [color("#DB6853"), color("#8CEA79"), color("#B66EF5"), color("#F5D15F"), color("#6AE7EB"), color("#DB66F5")], 
@@ -199,6 +212,8 @@ let isEnterKeyPressed = false;
     ];
       simplex = new SimplexNoise();  
       population = new Population(colors, populationSize); 
+      let planetSize_prompt = population.getSize(inputs);
+
       createCanvas(900, 900, WEBGL); 
       for (let i = 0; i < 9; i++) { 
         let seedX = random(0, 200); 
@@ -226,7 +241,6 @@ let isEnterKeyPressed = false;
       let planetSize = Math.min(width / (columns + 1), height / (rows + 1)); 
       let offsetX = (width - (columns * planetSize)) / 2;
       let offsetY = (height - (rows * planetSize)) / 2;  
-      population.highlightPlanet();
 
       for (let i = 0; i < population.planets.length; i++){ 
         let x = (i % columns) * planetSize + offsetX;
@@ -253,30 +267,23 @@ let isEnterKeyPressed = false;
       }
     }
   
-
-    function mousePressed() {
-      let index = population.getPlanetIndexAtMousePosition();
+    function keyPressed() {
+      population.highlightPlanet();
+      let index = population.getPlanetIndexAtKeyPressed();
       population.selectPlanet(index);
-    }
-
-    function mouseClicked() {
-      for (let i = 0; i < population.planets.length; i++) {
-        population.planets[i].fitness += 1;
+    
+      if (keyCode === ENTER) {
+        if (!population.isGenerating) {
+          population = new Population(colors, populationSize);
+        }
+      } else if (keyCode === 32) {
+        if (!population.isGenerating) {
+          population.updateFitness();
+          population.createNewGeneration();
+        }
       }
     }
 
-  function keyPressed() {
-    if (keyCode === ENTER) {
-      if (!population.isGenerating) {
-        population = new Population(colors, populationSize);
-      }
-    } else if (keyCode === 32) {
-      if (!population.isGenerating) {
-        population.updateFitness();
-        population.createNewGeneration();
-      }
-    }
-  }
    
     let textureCache = {};
    
@@ -384,3 +391,30 @@ let isEnterKeyPressed = false;
         }
         return array; 
       }
+
+
+/*
+function getColor(inputs) {
+  let colors = ["red", "green", "blue"];
+  for (let i = 0; i < inputs.length; i++) {
+    let colorIndex = colors.indexOf(inputs[i]);
+    if (colorIndex !== -1) {
+      return getColorValue(colorIndex);
+    }
+  }
+  return color(0);
+}
+
+function getColorValue(index) {
+  switch (index) {
+    case 0:
+      return color(255, 0, 0); // red
+    case 1:
+      return color(0, 255, 0); // green
+    case 2:
+      return color(0, 0, 255); // blue
+    default:
+      return color(0);
+  }
+}
+*/
