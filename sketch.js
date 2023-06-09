@@ -1,12 +1,10 @@
-let simplex; 
-let textures = []; 
-let colors = []; 
-let planetSizes = []; 
+let simplex;
+let textures = [];
+let colors = [];
+let planetSizes = [];
 let cloudTextures = [];
 let populationSize = 9;
 let population;
-let myFont;
-
 
 
 
@@ -86,6 +84,14 @@ class Planet {
         this.genTextureCloud(this.seedXCloud, this.seedYCloud, this.colorArray1Cloud, this.colorArray2Cloud, this.octavesCloud)
       ]);
     }
+
+  downloadTexture() {
+    let link = document.createElement('a');
+    link.href = this.texture.canvas.toDataURL();
+    link.download = 'planet.png';
+    link.click();
+  }
+
   }
 
 
@@ -308,6 +314,12 @@ class Population {
     let index = population.getPlanetIndexAtKeyPressed();
     population.selectPlanet(index);
   
+    if (key === 'p' || key === 'P') {
+    let selectedPlanet = population.planets.find(planet => planet.selected);
+    if (selectedPlanet) {
+      selectedPlanet.downloadTexture();
+    }
+  }
    
     if (keyCode === ENTER) {
       
@@ -317,5 +329,8 @@ class Population {
       console.log("Space bar pressed. Starting evolution process...");
           population.updateFitness();
           population.createNewGeneration();      
-    }
+    } 
+    
   }
+
+ 
