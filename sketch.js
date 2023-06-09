@@ -1,3 +1,15 @@
+let simplex; 
+let textures = []; 
+let colors = []; 
+let planetSizes = []; 
+let cloudTextures = [];
+let populationSize = 9;
+let population;
+let myFont;
+
+
+
+
 class Planet {
   constructor(colors, seedX, seedY, seedXCloud, seedYCloud, colorArray1, colorArray2, colorArray1Cloud, colorArray2Cloud, octaves, octavesCloud, size) {
     this.colors = colors;
@@ -9,24 +21,28 @@ class Planet {
     this.colorArray2 = colorArray2;
     this.colorArray1Cloud = colorArray1Cloud;
     this.colorArray2Cloud = colorArray2Cloud;
-
     this.octaves = octaves;
     this.octavesCloud = octavesCloud;
     this.size = size;
     this.fitness = 0;
-
+    this.texturesReady = false;
+    this.selected = false;
     this.initTextures();
   }
-  async initTextures() {
-    [this.texture, this.cloudTexture] = await Promise.all([
-      this.genTexture(this.seedX, this.seedY, this.colorArray1, this.colorArray2, this.octaves),
-      this.genTexture(this.seedXCloud, this.seedYCloud, this.colorArray1Cloud, this.colorArray2Cloud, this.octavesCloud)
-    ]);
+   initTextures() {
+    this.texture = this.genTexture(this.seedX, this.seedY, this.colorArray1, this.colorArray2, this.octaves);
+    this.cloudTexture = this.genTextureCloud(this.seedXCloud, this.seedYCloud, this.colorArray1Cloud, this.colorArray2Cloud, this.octavesCloud);
+    this.texturesReady = true;
   }
 
-  async genTexture(seedX, seedY, colorArray1, colorArray2, octaves) {
-    let t = await defTexture(200, 200, seedX, seedY, colorArray1, colorArray2, octaves);
+   genTexture(seedX, seedY, colorArray1, colorArray2, octaves) {
+    let t = defTexture(200, 200, seedX, seedY, colorArray1, colorArray2, octaves);
     return t;
+  }
+
+  genTextureCloud(seedX, seedY, colorArray1, colorArray2, octavesCloud){
+    let c = generateCloudTexture(200, 200, seedX, seedY, colorArray1, colorArray2, octavesCloud);
+    return c;
   }
 
   crossover(partner) {
@@ -44,12 +60,10 @@ class Planet {
       random() > 0.5 ? this.octavesCloud : partner.octavesCloud,
       random() > 0.5 ? this.size : partner.size
     );
-  
     return child;
   }
-  
 
-  async mutate() {
+   mutate() {
     if (random() < 0.5) {
       this.seedX = random(0, 200);
       this.seedY = random(0, 200);
@@ -60,74 +74,45 @@ class Planet {
       this.size = random(30, 100);
     }
     if (random() < 0.5) {
-      this.colorArray1 = customShuffle(this.colors[colorIndex]).slice(0, 15); // Use this.colors instead of colors
-      this.colorArray2 = customShuffle(this.colors[colorIndex]).slice(0, 15); // Use this.colors instead of colors
-      this.colorArray1Cloud = customShuffle(this.colors[colorIndex]).slice(0, 15); // Use this.colors instead of colors
-      this.colorArray2Cloud = customShuffle(this.colors[colorIndex]).slice(0, 15); // Use this.colors instead of colors
+      let colorIndex = Math.floor(Math.random() * this.colors.length);
+      this.colorArray1 = customShuffle(this.colors[colorIndex]).slice(0, 5); // Use this.colors instead of colors
+      this.colorArray2 = customShuffle(this.colors[colorIndex]).slice(0, 5); // Use this.colors instead of colors
+      this.colorArray1Cloud = customShuffle(this.colors[colorIndex]).slice(0, 5); // Use this.colors instead of colors
+      this.colorArray2Cloud = customShuffle(this.colors[colorIndex]).slice(0, 5); // Use this.colors instead of colors
     }
 
-
-      [this.texture, this.cloudTexture] = await Promise.all([
+      [this.texture, this.cloudTexture] = ([
         this.genTexture(this.seedX, this.seedY, this.colorArray1, this.colorArray2, this.octaves),
-        this.genTexture(this.seedXCloud, this.seedYCloud, this.colorArray1Cloud, this.colorArray2Cloud, this.octavesCloud)
+        this.genTextureCloud(this.seedXCloud, this.seedYCloud, this.colorArray1Cloud, this.colorArray2Cloud, this.octavesCloud)
       ]);
     }
   }
-  let planetSize_prompt;
+
 
 class Population {
   constructor(colors, populationSize) {
-    this.isGenerating = false;
-    this.planets = [];
-    this.highlightedPlanet = null;
+
+    this.planets = [];   
     for (let i = 0; i < populationSize; i++) {
       let seedX = random(0, 200);
       let seedY = random(0, 200);
       let seedXCloud = random(0, 200);
       let seedYCloud = random(0, 200);
-      let colorArray1 = customShuffle(colors[i % colors.length]).slice(0, 15);
-      let colorArray2 = customShuffle(colors[(i + 1) % colors.length]).slice(0, 15);
-      let colorArray1Cloud = customShuffle(colors[i % colors.length]).slice(0, 15);
-      let colorArray2Cloud = customShuffle(colors[(i + 1) % colors.length]).slice(0, 15);
+      let colorArray1 = customShuffle(colors[i % colors.length]).slice(0, 5);
+      let colorArray2 = customShuffle(colors[(i + 1) % colors.length]).slice(0, 5);
+      let colorArray1Cloud = customShuffle(colors[i % colors.length]).slice(0, 5);
+      let colorArray2Cloud = customShuffle(colors[(i + 1) % colors.length]).slice(0, 5);
       let octavesCloud = floor(random(1, 4));
       let octaves = floor(random(1, 8));
-      let size = planetSize_prompt;
-      this.selected = false;
+      let size = random(30, 100);
+      
 
       this.planets.push(new Planet(colors, seedX, seedY, seedXCloud, seedYCloud, colorArray1, colorArray2, colorArray1Cloud, colorArray2Cloud, octaves, octavesCloud, size));
     }
     this.fitness = 0;
   }
 
-  getSize(inputs) {
-    let sizes = ["small", "medium", "big", "large", "huge"];
-    for (let i = 0; i < inputs.length; i++) {
-      let sizeIndex = sizes.indexOf(inputs[i]);
-      if (sizeIndex !== -1) {
-        return this.getSizeValue(sizeIndex);
-      }
-    }
-  }
-  
-  getSizeValue(index) {
-    switch (index) {
-      case 0:
-        return random(30, 45); // small 
-      case 1:
-        return random(46, 60); // medium
-      case 2:
-      case 3:
-        return random(61, 75); // big or large
-      case 4:
-        return random(76, 100); // huge
-    }
-  }
-
-  async createNewGeneration() {
-    if (this.isGenerating) {
-      return;
-    }
-    this.isGenerating = true;
+  createNewGeneration() {
     let newGeneration = [];
 
     let selectedPlanets = this.planets.filter(planet => planet.selected);
@@ -140,21 +125,21 @@ class Population {
 
       let child = parent1.crossover(parent2);
       child.mutate();
-      await child.initTextures();
+      child.initTextures();
       newGeneration.push(child);
       
     }
 
     this.planets = newGeneration;
-    this.isGenerating = false;
+    
   }
-  selectParent(totalFitness) {
+  selectParent(totalFitness, selectedPlanets) {
     let selection = random(totalFitness);
-    for(let i = 0; i < this.planets.length; i++){
-      if (selection < this.planets[i].fitness){
-        return this.planets[i];
+    for(let i = 0; i < selectedPlanets.length; i++){
+      if (selection < selectedPlanets[i].fitness){
+        return selectedPlanets[i];
       }
-      selection -= this.planets[i].fitness;
+      selection -= selectedPlanets[i].fitness;
     }
   }
   getPlanetIndexAtKeyPressed() {
@@ -166,43 +151,107 @@ class Population {
     }
     return -1;
   }
-
-  selectPlanet(index) {
-    if (index !== -1) {
-      this.planets[index].selected = !this.planets[index].selected;
+  
+    selectPlanet(index) {  
+      if (index !== -1) {
+        this.planets[index].selected = !this.planets[index].selected;
+      }
     }
-  }
 
-  highlightPlanet() {
-    let index = this.getPlanetIndexAtKeyPressed();
-    this.highlightedPlanet = index !== -1 ? this.planets[index] : null;
-  }
     updateFitness() {
       for (let planet of this.planets) {
         planet.fitness = planet.selected ? 1 : 0;
       }
     }
+  }
+  
 
+   
+ function defTexture(wid, hei, seedX=0, seedY=0, colorArray1, colorArray2, octaves) { 
+   
+   let t = createImage(wid, hei);
+   t.loadPixels();
+   for (let y = 0; y < t.height; y++) { 
+     for (let x = 0; x < t.width; x++) { 
+       let lon = map(x, 0, t.width, 0, TWO_PI); 
+       let lat = map(y, 0, t.height, 0, PI); 
+       let nx = sin(lat) * cos(lon); 
+       let ny = sin(lat) * sin(lon); 
+       let nz = cos(lat);            
+       let h = 0;
+       let amplitude = 0.5; 
+       for(let i = 0; i < octaves; i++){ 
+         h += amplitude * (simplex.noise3D(seedX + nx * pow(2, i), seedY + ny * pow(2, i), nz * pow(2, i)) + 1)/ 2;
+         amplitude *= 0.5;
+       }
+       h = map(h, 0, 1, 0, 1); 
+       let c1 = pickColor(h, colorArray1);  
+       let c2 = pickColor(h, colorArray2);  
+       let mix = (sin(h * PI) + 1) / 2; 
+       let c = lerpColor(c1, c2, mix);  
+       t.set(x, y, c); 
+     }
+   }
+   t.updatePixels(); 
+   return t;
+ }
 
-
+ function generateCloudTexture(wid, hei, seedX=0, seedY=0, colorArray1, colorArray2, octavesCloud) {
+   
+   let cl = createImage(wid, hei);
+   cl.loadPixels();             
+   for (let y = 0; y < cl.height; y++) {
+       for (let x = 0; x < cl.width; x++) {
+           let lon = map(y, 0, cl.width, 0, TWO_PI);
+           let lat = map(x, 0, cl.height, 0, PI);
+           let nx = sin(lat) * cos(lon);
+           let ny = sin(lat) * sin(lon);
+           let nz = cos(lat);                   
+           let n = 0;
+           let amplitude = 0.5;                  
+           for(let i = 0; i < octavesCloud; i++) {
+            n += amplitude * noise(seedX + nx * pow(2, i), seedY + ny * pow(2, i), nz * pow(2, i) + 1)/2;
+               amplitude *= 0.5;
+           }                
+            
+           n = map(n, 0, 1, 0, 1);           
+           let c1 = pickColor(n, colorArray1);
+           let c2 = pickColor(n, colorArray2);
+           let mix = (sin(n * PI) + 1) / 2;
+           let c = lerpColor(c1, c2, mix);    
+           c.setAlpha(map(n, 0, 1, random(0,30), random(0,200)));                 
+           cl.set(x, y, c);
+       }
+   }
+   cl.updatePixels();
+    return cl;
 }
 
+ function pickColor(h, colorArray) { 
+  let index = floor(h * (colorArray.length - 1)); 
+  let color1 = colorArray[index]; 
+  let color2 = colorArray[min(index + 1, colorArray.length - 1)]; 
+  let factor = (h * (colorArray.length - 1)) - index; 
 
-let simplex; 
-let textures = []; 
-let colors = []; 
-let planetSizes = []; 
-let cloudTextures = [];
-let population;
-let populationSize = 9;
-let isEnterKeyPressed = false;
+  return lerpColor(color1, color2, factor);
+ }
+ 
+ function customShuffle(array) { 
+   let currentIndex = array.length, temporaryValue, randomIndex; 
+   while (0 !== currentIndex) { 
+     randomIndex = Math.floor(Math.random() * currentIndex); 
+     currentIndex -= 1; 
+     temporaryValue = array[currentIndex]; 
+     array[currentIndex] = array[randomIndex];
+     array[randomIndex] = temporaryValue; 
+   }
+   return array; 
+ }
 
-let input = prompt("What kind of planet do you want? (size and color)");
-let inputs = input.split(" ");
+
 
 
     function setup() { 
-
      colors = [
       [color("#008dc4"), color("#00a9cc"), color("#eecda3"), color("#7ec850"), color("#676767"), color("#fffafa")], 
       [color("#DB6853"), color("#8CEA79"), color("#B66EF5"), color("#F5D15F"), color("#6AE7EB"), color("#DB66F5")], 
@@ -211,38 +260,27 @@ let inputs = input.split(" ");
       [color("#B8CBD6"), color("#C28447"), color("#4A120C"), color("#9FC4CB"), color("#F2E8C4"), color("#F2E8C4")],
     ];
       simplex = new SimplexNoise();  
-      population = new Population(colors, populationSize); 
-      let planetSize_prompt = population.getSize(inputs);
-
+      population = new Population(colors, populationSize);  
       createCanvas(900, 900, WEBGL); 
-      for (let i = 0; i < 9; i++) { 
-        let seedX = random(0, 200); 
-        let seedY = random(0, 200); 
-        let seedXCloud = random(0, 200);
-        let seedYCloud = random(0, 200); 
-      let colorArray1 = customShuffle(colors[i % colors.length].slice(0,15));  
-      let colorArray2 = customShuffle(colors[(i+1) % colors.length].slice(0,15)); 
-      let colorArray1Cloud = customShuffle(colors[i % colors.length].slice(0,15)); 
-      let colorArray2Cloud = customShuffle(colors[(i+1) % colors.length].slice(0,15)); 
-      let octavesCloud = floor(random(1, 4));
-       let octaves = floor(random(1, 8));
-        textures[i] = defTexture(200, 200, seedX, seedY, colorArray1, colorArray2, octaves);
-        planetSizes[i] = random(30, 100);
-        cloudTextures[i] = generateCloudTexture(200, 200, seedXCloud, seedYCloud, colorArray1Cloud, colorArray2Cloud, octavesCloud);         
-      }
+      
       noStroke(); 
-      lights();      
-    }
+      lights();  
+  }
+  
     function draw() {
       background(0); 
 
-      let columns = Math.floor(Math.sqrt(textures.length)); 
-      let rows = Math.ceil(textures.length / columns); 
+      textSize(32);
+      fill(255);
+      text('Select the planet you enjoy the most',10,30)
+
+      let columns = Math.floor(Math.sqrt(population.planets.length)); 
+      let rows = Math.ceil(population.planets.length / columns); 
       let planetSize = Math.min(width / (columns + 1), height / (rows + 1)); 
       let offsetX = (width - (columns * planetSize)) / 2;
       let offsetY = (height - (rows * planetSize)) / 2;  
-
-      for (let i = 0; i < population.planets.length; i++){ 
+   
+       for (let i = 0; i < population.planets.length; i++){ 
         let x = (i % columns) * planetSize + offsetX;
         let y = Math.floor(i / columns) * planetSize + offsetY;
 
@@ -251,170 +289,33 @@ let inputs = input.split(" ");
         rotateY(frameCount * 0.01);
         texture(population.planets[i].texture);
         sphere(population.planets[i].size);
-        texture(population.planets[i].cloudTexture);
-        sphere(population.planets[i].size * 1.02);
-        pop();
         
-        if (population.planets[i] === population.highlightedPlanet) {
-          stroke(255, 255, 0);
-          strokeWeight(1);
-        } else if (population.planets[i].selected) {
+
+        if (population.planets[i].selected) {
           stroke(0, 255, 0);
-          strokeWeight(2);
+          strokeWeight(0.5);
         } else {
           noStroke();
         }
-      }
-    }
-  
-    function keyPressed() {
-      population.highlightPlanet();
-      let index = population.getPlanetIndexAtKeyPressed();
-      population.selectPlanet(index);
-    
-      if (keyCode === ENTER) {
-        if (!population.isGenerating) {
-          population = new Population(colors, populationSize);
-        }
-      } else if (keyCode === 32) {
-        if (!population.isGenerating) {
-          population.updateFitness();
-          population.createNewGeneration();
-        }
+        texture(population.planets[i].cloudTexture);
+        sphere(population.planets[i].size * 1.02);
+        pop();
       }
     }
 
+  function keyPressed() {
+    
+    let index = population.getPlanetIndexAtKeyPressed();
+    population.selectPlanet(index);
+  
    
-    let textureCache = {};
-   
-     async function defTexture(wid=200, hei=200, seedX=0, seedY=0, colorArray1, colorArray2, octaves) { 
-        let key = `${wid}-${hei}-${seedX}-${seedY}-${colorArray1.toString()}-${colorArray2.toString()}-${octaves}`;
-        if(textureCache[key]) {
-          return textureCache[key];
-        } 
-        let t = await new Promise((resolve, reject) => {
-        let t = createImage(wid, hei);
-        t.loadPixels();
-        let warpScale = random(0.01, 0.5); 
-        let warpMultiplier = random(0.01, 0.5); 
-        for (let y = 0; y < t.height; y++) { 
-          for (let x = 0; x < t.width; x++) { 
-            let lon = map(x, 0, t.width, 0, TWO_PI); 
-            let lat = map(y, 0, t.height, 0, PI); 
-            let nx = sin(lat) * cos(lon); 
-            let ny = sin(lat) * sin(lon); 
-            let nz = cos(lat);            
-            let warpX = noise(nx * warpScale, ny * warpScale);
-            let warpY = noise(ny * warpScale, nx * warpScale);
-            let warpZ = noise(nz * warpScale, nx * warpScale);
-            nx += warpX * warpMultiplier; 
-            ny += warpY * warpMultiplier; 
-            nz += warpZ * warpMultiplier; 
-            let h = 0;
-            let amplitude = 0.5; 
-            for(let i = 0; i < octaves; i++){ 
-              h += amplitude * (simplex.noise3D(seedX + nx * pow(2, i), seedY + ny * pow(2, i), nz * pow(2, i)) + noise(nx, ny, nz) + 1) / 3;
-              amplitude *= 0.5;
-            }
-            h = map(h, 0, 1, 0, 1); 
-            let c1 = pickColor(h, colorArray1);  
-            let c2 = pickColor(h, colorArray2);  
-            let mix = (sin(h * PI) + 1) / 2; 
-            let c = lerpColor(c1, c2, mix);  
-            t.set(x, y, c); 
-          }
-        }
-        t.updatePixels(); 
-        resolve(t); 
-      });
-      textureCache[key] = t;
-      return t; 
-      }
+    if (keyCode === ENTER) {
       
-    
-      function generateCloudTexture(wid, hei, seedX=0, seedY=0, colorArray1, colorArray2, octavesCloud) {
-        return new Promise((resolve, reject) => {
-        let cl = createImage(wid, hei);
-        cl.loadPixels();        
-        let frequency = random(0.1, 0.3);
-        let persistence = random(0.01, 0.5); 
-        let warpScale = random(0.01, 0.5); 
-        let warpMultiplier = random(0.01, 0.5);         
-        for (let y = 0; y < cl.height; y++) {
-            for (let x = 0; x < cl.width; x++) {
-                let lon = map(y, 0, cl.width, 0, TWO_PI);
-                let lat = map(x, 0, cl.height, 0, PI);
-                let nx = sin(lat) * cos(lon);
-                let ny = sin(lat) * sin(lon);
-                let nz = cos(lat);                
-                let warpX = noise(nx * warpScale, ny * warpScale);
-                let warpY = noise(ny * warpScale, nx * warpScale);  
-                nx += warpX * warpMultiplier;
-                ny += warpY * warpMultiplier;    
-                let n = 0;
-                let maxPossible = 0;
-                let amplitude = 0.8;                  
-                for(let i = 0; i < octavesCloud; i++) {
-                    n += amplitude * noise(seedX + nx * pow(2, i) * frequency, seedY + ny * pow(2, i) * frequency, nz * pow(2, i) * frequency);
-                    maxPossible += amplitude;
-                    amplitude *= persistence;
-                }                
-                n = n / maxPossible;                 
-                let c1 = pickColor(n, colorArray1);
-                let c2 = pickColor(n, colorArray2);
-                let mix = (sin(n * PI) + 1) / 2;
-                let c = lerpColor(c1, c2, mix);    
-                c.setAlpha(map(n, 0, 1, random(0,30), random(0,200)));                 
-                cl.set(x, y, c);
-            }
-        }
-        cl.updatePixels();
-         resolve(cl);
-  });
-    }
-      function pickColor(h, colorArray) { 
-       let index = floor(h * (colorArray.length - 1)); 
-       let color1 = colorArray[index]; 
-       let color2 = colorArray[min(index + 1, colorArray.length - 1)]; 
-       let factor = (h * (colorArray.length - 1)) - index; 
-  
-       return lerpColor(color1, color2, factor);
-      }
-      function customShuffle(array) { 
-        let currentIndex = array.length, temporaryValue, randomIndex; 
-        while (0 !== currentIndex) { 
-          randomIndex = Math.floor(Math.random() * currentIndex); 
-          currentIndex -= 1; 
-          temporaryValue = array[currentIndex]; 
-          array[currentIndex] = array[randomIndex];
-          array[randomIndex] = temporaryValue; 
-        }
-        return array; 
-      }
-
-
-/*
-function getColor(inputs) {
-  let colors = ["red", "green", "blue"];
-  for (let i = 0; i < inputs.length; i++) {
-    let colorIndex = colors.indexOf(inputs[i]);
-    if (colorIndex !== -1) {
-      return getColorValue(colorIndex);
+        population = new Population(colors, populationSize);
+      
+    } else if (keyCode === 32) {
+      console.log("Space bar pressed. Starting evolution process...");
+          population.updateFitness();
+          population.createNewGeneration();      
     }
   }
-  return color(0);
-}
-
-function getColorValue(index) {
-  switch (index) {
-    case 0:
-      return color(255, 0, 0); // red
-    case 1:
-      return color(0, 255, 0); // green
-    case 2:
-      return color(0, 0, 255); // blue
-    default:
-      return color(0);
-  }
-}
-*/
