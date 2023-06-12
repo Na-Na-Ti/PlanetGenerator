@@ -5,8 +5,15 @@ let planetSizes = [];
 let cloudTextures = [];
 let populationSize = 9;
 let population;
-
-
+//solar system code
+let angle = 0;
+let sunRadius = 100;
+let planetRadius = 40;
+let a = 300; 
+let b = -300; 
+let orbitSpeed = 0.01;
+let sunTexture;
+//solar system code
 
 class Planet {
   constructor(colors, seedX, seedY, seedXCloud, seedYCloud, colorArray1, colorArray2, colorArray1Cloud, colorArray2Cloud, octaves, octavesCloud, size) {
@@ -73,10 +80,10 @@ class Planet {
     }
     if (random() < 0.5) {
       let colorIndex = Math.floor(Math.random() * this.colors.length);
-      this.colorArray1 = customShuffle(this.colors[colorIndex]).slice(0, 5); // Use this.colors instead of colors
-      this.colorArray2 = customShuffle(this.colors[colorIndex]).slice(0, 5); // Use this.colors instead of colors
-      this.colorArray1Cloud = customShuffle(this.colors[colorIndex]).slice(0, 5); // Use this.colors instead of colors
-      this.colorArray2Cloud = customShuffle(this.colors[colorIndex]).slice(0, 5); // Use this.colors instead of colors
+      this.colorArray1 = customShuffle(this.colors[colorIndex]).slice(0, 5); 
+      this.colorArray2 = customShuffle(this.colors[colorIndex]).slice(0, 5); 
+      this.colorArray1Cloud = customShuffle(this.colors[colorIndex]).slice(0, 5); 
+      this.colorArray2Cloud = customShuffle(this.colors[colorIndex]).slice(0, 5); 
     }
 
       [this.texture, this.cloudTexture] = ([
@@ -84,14 +91,14 @@ class Planet {
         this.genTextureCloud(this.seedXCloud, this.seedYCloud, this.colorArray1Cloud, this.colorArray2Cloud, this.octavesCloud)
       ]);
     }
-
+/*
   downloadTexture() {
     let link = document.createElement('a');
     link.href = this.texture.canvas.toDataURL();
     link.download = 'planet.png';
     link.click();
   }
-
+*/
   }
 
 
@@ -258,6 +265,8 @@ class Population {
 
 
     function setup() { 
+      sunTexture = loadImage('sun.png'); //solar system code
+
      colors = [
       [color("#008dc4"), color("#00a9cc"), color("#eecda3"), color("#7ec850"), color("#676767"), color("#fffafa")], 
       [color("#DB6853"), color("#8CEA79"), color("#B66EF5"), color("#F5D15F"), color("#6AE7EB"), color("#DB66F5")], 
@@ -271,15 +280,49 @@ class Population {
       
       noStroke(); 
       lights();  
+
+      
   }
   
     function draw() {
+
       background(0); 
 
       textSize(32);
       fill(255);
-      text('Select the planet you enjoy the most',10,30)
+      text('Select the planet you enjoy the most',10,30);
+      //solar system code
+      if (keyIsPressed && key === 'p') {
+        for (let i = 0; i < population.planets.length; i++) {
+          if (population.planets[i].selected) {
+            push();
 
+            noStroke(); 
+            camera(0, 0, 800, 0, 0, 0, 0, 1, 0);
+
+            push();
+            texture(sunTexture);
+            sphere(sunRadius);
+            pop();
+
+            rotateY(frameCount * 0.01);
+
+            push();
+              let x = a * cos(angle);
+              let y = 0;
+              let z = b * sin(angle);
+              translate(x, y, z);
+              texture(population.planets[i].texture);
+              sphere(planetRadius);
+            pop();
+
+            angle += orbitSpeed;
+            pop();
+            return; 
+          }
+        }
+      }
+      //solar system code
       let columns = Math.floor(Math.sqrt(population.planets.length)); 
       let rows = Math.ceil(population.planets.length / columns); 
       let planetSize = Math.min(width / (columns + 1), height / (rows + 1)); 
@@ -313,14 +356,15 @@ class Population {
     
     let index = population.getPlanetIndexAtKeyPressed();
     population.selectPlanet(index);
-  
+  /* download texture
     if (key === 'p' || key === 'P') {
     let selectedPlanet = population.planets.find(planet => planet.selected);
+    
     if (selectedPlanet) {
       selectedPlanet.downloadTexture();
-    }
+    }  
   }
-   
+   */
     if (keyCode === ENTER) {
       
         population = new Population(colors, populationSize);
