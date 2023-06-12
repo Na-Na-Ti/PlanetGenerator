@@ -13,6 +13,7 @@ let a = 300;
 let b = -300; 
 let orbitSpeed = 0.01;
 let sunTexture;
+let page = 0;
 //solar system code
 
 class Planet {
@@ -285,71 +286,82 @@ class Population {
   }
   
     function draw() {
-
-      background(0); 
-
-      textSize(32);
-      fill(255);
-      text('Select the planet you enjoy the most',10,30);
-      //solar system code
-      if (keyIsPressed && key === 'p') {
-        for (let i = 0; i < population.planets.length; i++) {
-          if (population.planets[i].selected) {
-            push();
-
-            noStroke(); 
-            camera(0, 0, 800, 0, 0, 0, 0, 1, 0);
-
-            push();
-            texture(sunTexture);
-            sphere(sunRadius);
-            pop();
-
-            rotateY(frameCount * 0.01);
-
-            push();
-              let x = a * cos(angle);
-              let y = 0;
-              let z = b * sin(angle);
-              translate(x, y, z);
-              texture(population.planets[i].texture);
-              sphere(planetRadius);
-            pop();
-
-            angle += orbitSpeed;
-            pop();
-            return; 
-          }
-        }
+      if (keyPressed && key === 's') {
+        page = 1;
+      } else if (keyPressed && key === 'e'){
+        page = 0;
       }
-      //solar system code
-      let columns = Math.floor(Math.sqrt(population.planets.length)); 
-      let rows = Math.ceil(population.planets.length / columns); 
-      let planetSize = Math.min(width / (columns + 1), height / (rows + 1)); 
-      let offsetX = (width - (columns * planetSize)) / 2;
-      let offsetY = (height - (rows * planetSize)) / 2;  
-   
-       for (let i = 0; i < population.planets.length; i++){ 
-        let x = (i % columns) * planetSize + offsetX;
-        let y = Math.floor(i / columns) * planetSize + offsetY;
 
-        push();
-        translate(x - width / 2, y - height / 2);
-        rotateY(frameCount * 0.01);
-        texture(population.planets[i].texture);
-        sphere(population.planets[i].size);
+      switch (page) {
+        case 0:
+          background(0); 
+
+          textSize(32);
+          fill(255);
+          text('Select the planet you enjoy the most',10,30);
         
+          let columns = Math.floor(Math.sqrt(population.planets.length)); 
+          let rows = Math.ceil(population.planets.length / columns); 
+          let planetSize = Math.min(width / (columns + 1), height / (rows + 1)); 
+          let offsetX = (width - (columns * planetSize)) / 2;
+          let offsetY = (height - (rows * planetSize)) / 2;  
+      
+          for (let i = 0; i < population.planets.length; i++){ 
+            let x = (i % columns) * planetSize + offsetX;
+            let y = Math.floor(i / columns) * planetSize + offsetY;
 
-        if (population.planets[i].selected) {
-          stroke(0, 255, 0);
-          strokeWeight(0.5);
-        } else {
-          noStroke();
-        }
-        texture(population.planets[i].cloudTexture);
-        sphere(population.planets[i].size * 1.02);
-        pop();
+            push();
+            translate(x - width / 2, y - height / 2);
+            rotateY(frameCount * 0.01);
+            texture(population.planets[i].texture);
+            sphere(population.planets[i].size);
+            
+
+            if (population.planets[i].selected) {
+              stroke(0, 255, 0);
+              strokeWeight(0.5);
+            } else {
+              noStroke();
+            }
+            texture(population.planets[i].cloudTexture);
+            sphere(population.planets[i].size * 1.02);
+            pop();
+          }
+          
+          break;
+        case 1:
+          background(0); 
+          for (let i = 0; i < population.planets.length; i++) {
+            if (population.planets[i].selected) {
+              push();
+    
+              noStroke(); 
+              camera(0, 0, 800, 0, 0, 0, 0, 1, 0);
+    
+              push();
+              texture(sunTexture);
+              sphere(sunRadius);
+              pop();
+    
+              rotateY(frameCount * 0.01);
+    
+              push();
+                let x = a * cos(angle);
+                let y = 0;
+                let z = b * sin(angle);
+                translate(x, y, z);
+                texture(population.planets[i].texture);
+                sphere(planetRadius);
+              pop();
+    
+              angle += orbitSpeed;
+              pop();
+              return; 
+            }
+          }
+          break;
       }
+      
     }
 
   function keyPressed() {
