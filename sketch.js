@@ -8,7 +8,6 @@ let population;
 //solar system code
 let angle = 0;
 let sunRadius = 100;
-let planetRadius = 40;
 let a = 300; 
 let b = -300; 
 let orbitSpeed = 0.01;
