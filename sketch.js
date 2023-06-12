@@ -351,7 +351,7 @@ class Population {
                 let z = b * sin(angle);
                 translate(x, y, z);
                 texture(population.planets[i].texture);
-                sphere(planetRadius);
+                sphere(population.planets[i].size);
               pop();
     
               angle += orbitSpeed;
