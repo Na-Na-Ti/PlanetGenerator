@@ -1,12 +1,15 @@
-let simplex;
-let textures = [];
-let colors = [];
-let planetSizes = [];
-let cloudTextures = [];
-let populationSize = 9;
-let population;
+//--------------------------------------------lets and arrays--------------------------------------------------------
+
+let simplex; // simplex noise object
+let textures = []; // array of textures
+let colors = []; // array of colors
+let planetSizes = []; // array of planet sizes
+let cloudTextures = []; // array of cloud textures
+let populationSize = 9; // number of planets in population
+let population; // population object
+let MutationRate = 0.15;  // mutation rate
 //solar system code
-let angle = 0;
+let angle = 0; 
 let sunRadius = 100;
 let a = 300; 
 let b = -300; 
@@ -15,44 +18,52 @@ let sunTexture;
 let page = 0;
 //solar system code
 
+/*-----------------------------------------------------------------------------------------------------------------
+--------------------------------------------Classes--------------------------------------------------------*/
+
 class Planet {
   constructor(colors, seedX, seedY, seedXCloud, seedYCloud, colorArray1, colorArray2, colorArray1Cloud, colorArray2Cloud, octaves, octavesCloud, size) {
-    this.colors = colors;
-    this.seedX = seedX;
-    this.seedY = seedY;
-    this.seedXCloud = seedXCloud;
-    this.seedYCloud = seedYCloud;
-    this.colorArray1 = colorArray1;
-    this.colorArray2 = colorArray2;
-    this.colorArray1Cloud = colorArray1Cloud;
-    this.colorArray2Cloud = colorArray2Cloud;
-    this.octaves = octaves;
-    this.octavesCloud = octavesCloud;
-    this.size = size;
-    this.fitness = 0;
-    this.texturesReady = false;
-    this.selected = false;
-    this.initTextures();
+    this.colors = colors; 
+    this.seedX = seedX; // x seed for planet texture
+    this.seedY = seedY; // y seed for planet texture
+    this.seedXCloud = seedXCloud; // x seed for cloud texture
+    this.seedYCloud = seedYCloud; // y seed for cloud texture
+    this.colorArray1 = colorArray1; // color array for planet texture
+    this.colorArray2 = colorArray2; // color array for planet texture
+    this.colorArray1Cloud = colorArray1Cloud; // color array for cloud texture
+    this.colorArray2Cloud = colorArray2Cloud; // color array for cloud texture
+    this.octaves = octaves; // octaves, number of layers of noise
+    this.octavesCloud = octavesCloud; // octaves, number of layers of noise for clouds
+    this.size = size; // size of planet
+    this.fitness = 0; // fitness of planet
+    this.texturesReady = false; // boolean for if textures are ready
+    this.selected = false; // boolean for if planet is selected
+    this.initTextures(); // initialize textures
   }
+  // initialize textures
    initTextures() {
     this.texture = this.genTexture(this.seedX, this.seedY, this.colorArray1, this.colorArray2, this.octaves);
     this.cloudTexture = this.genTextureCloud(this.seedXCloud, this.seedYCloud, this.colorArray1Cloud, this.colorArray2Cloud, this.octavesCloud);
-    this.texturesReady = true;
+    this.texturesReady = true; 
   }
 
+  // generate planet texture
    genTexture(seedX, seedY, colorArray1, colorArray2, octaves) {
     let t = defTexture(200, 200, seedX, seedY, colorArray1, colorArray2, octaves);
     return t;
   }
 
+  // generate cloud texture
   genTextureCloud(seedX, seedY, colorArray1, colorArray2, octavesCloud){
     let c = generateCloudTexture(200, 200, seedX, seedY, colorArray1, colorArray2, octavesCloud);
     return c;
   }
 
-  crossover(partner) {
+  // crossover function, this function do a crossover between two or more planets, and return a new planet
+  crossover(partner) {  
+    // chance of 50% to get a gene from one of the parents
     let child = new Planet(
-      this.colors,
+      this.colors, 
       random() > 0.5 ? this.seedX : partner.seedX,
       random() > 0.5 ? this.seedY : partner.seedY,
       random() > 0.5 ? this.seedXCloud : partner.seedXCloud,
@@ -68,8 +79,9 @@ class Planet {
     return child;
   }
 
+  // mutation function, this function do a mutation in the planet depending on the mutation rate
    mutate() {
-    if (random() < 0.5) {
+    if (random() < MutationRate) {
       this.seedX = random(0, 200);
       this.seedY = random(0, 200);
       this.seedXCloud = random(0, 200);
@@ -77,8 +89,6 @@ class Planet {
       this.octaves = floor(random(1, 8));
       this.octavesCloud = floor(random(1, 4));
       this.size = random(30, 100);
-    }
-    if (random() < 0.5) {
       let colorIndex = Math.floor(Math.random() * this.colors.length);
       this.colorArray1 = customShuffle(this.colors[colorIndex]).slice(0, 5); 
       this.colorArray2 = customShuffle(this.colors[colorIndex]).slice(0, 5); 
@@ -91,17 +101,9 @@ class Planet {
         this.genTextureCloud(this.seedXCloud, this.seedYCloud, this.colorArray1Cloud, this.colorArray2Cloud, this.octavesCloud)
       ]);
     }
-/*
-  downloadTexture() {
-    let link = document.createElement('a');
-    link.href = this.texture.canvas.toDataURL();
-    link.download = 'planet.png';
-    link.click();
-  }
-*/
   }
 
-
+// population class, basically a list of planets
 class Population {
   constructor(colors, populationSize) {
 
@@ -125,6 +127,8 @@ class Population {
     this.fitness = 0;
   }
 
+
+  // calculate fitness of each planet
   createNewGeneration() {
     let newGeneration = [];
 
@@ -146,6 +150,8 @@ class Population {
     this.planets = newGeneration;
     
   }
+
+  // select a parent based on the fitness
   selectParent(totalFitness, selectedPlanets) {
     let selection = random(totalFitness);
     for(let i = 0; i < selectedPlanets.length; i++){
@@ -155,6 +161,8 @@ class Population {
       selection -= selectedPlanets[i].fitness;
     }
   }
+
+  //get the index of the planet that was pressed
   getPlanetIndexAtKeyPressed() {
     if (key >= '1' && key <= '9') {
       let index = int(key) - 1;
@@ -179,6 +187,10 @@ class Population {
   }
   
 
+
+
+/*-----------------------------------------------------------------------------------------------------------------------
+------------------------------------------Texture functions-----------------------------------------------------*/
    
  function defTexture(wid, hei, seedX=0, seedY=0, colorArray1, colorArray2, octaves) { 
    
@@ -263,6 +275,9 @@ class Population {
 
 
 
+/*------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------SETUP-------------------------------------------------------*/
+
 
     function setup() { 
       sunTexture = loadImage('sun.png'); //solar system code
@@ -284,6 +299,9 @@ class Population {
       
   }
   
+/*------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------DRAW-------------------------------------------------------*/
+
     function draw() {
       if (keyPressed && key === 's') {
         page = 1;
@@ -293,11 +311,7 @@ class Population {
 
       switch (page) {
         case 0:
-          background(0); 
-
-          textSize(32);
-          fill(255);
-          text('Select the planet you enjoy the most',10,30);
+          background(0);
         
           let columns = Math.floor(Math.sqrt(population.planets.length)); 
           let rows = Math.ceil(population.planets.length / columns); 
@@ -363,19 +377,14 @@ class Population {
       
     }
 
+
+/*------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------KEYPRESSED-------------------------------------------------------*/
   function keyPressed() {
     
     let index = population.getPlanetIndexAtKeyPressed();
     population.selectPlanet(index);
-  /* download texture
-    if (key === 'p' || key === 'P') {
-    let selectedPlanet = population.planets.find(planet => planet.selected);
-    
-    if (selectedPlanet) {
-      selectedPlanet.downloadTexture();
-    }  
-  }
-   */
+
     if (keyCode === ENTER) {
       
         population = new Population(colors, populationSize);
