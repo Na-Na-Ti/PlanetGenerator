@@ -7,7 +7,7 @@ let planetSizes = []; // array of planet sizes
 let cloudTextures = []; // array of cloud textures
 let populationSize = 9; // number of planets in population
 let population; // population object
-let MutationRate = 0.15;  // mutation rate
+let MutationRate = 0.5;  // mutation rate
 //solar system code
 let angle = 0; 
 let sunRadius = 100;
@@ -80,28 +80,38 @@ class Planet {
   }
 
   // mutation function, this function do a mutation in the planet depending on the mutation rate
+  // this specific mutation function 
    mutate() {
-    if (random() < MutationRate) {
-      this.seedX = random(0, 200);
-      this.seedY = random(0, 200);
-      this.seedXCloud = random(0, 200);
-      this.seedYCloud = random(0, 200);
-      this.octaves = floor(random(1, 8));
-      this.octavesCloud = floor(random(1, 4));
-      this.size = random(30, 100);
-      let colorIndex = Math.floor(Math.random() * this.colors.length);
-      this.colorArray1 = customShuffle(this.colors[colorIndex]).slice(0, 5); 
-      this.colorArray2 = customShuffle(this.colors[colorIndex]).slice(0, 5); 
-      this.colorArray1Cloud = customShuffle(this.colors[colorIndex]).slice(0, 5); 
-      this.colorArray2Cloud = customShuffle(this.colors[colorIndex]).slice(0, 5); 
-    }
 
+    if (random() < MutationRate) {
+      this.seedX += random(-100, 100);
+        this.seedY += random(-100, 100);
+        this.seedXCloud += random(-100, 100);
+        this.seedYCloud += random(-100, 100);
+        this.size += random(-10, 10);
+        this.octaves += floor(random(-1, 2));
+        this.octavesCloud += floor(random(-1, 2));
+        
+        let colorIndex = Math.floor(Math.random() * this.colors.length);
+        this.colorArray1 = customShuffle(this.colors[colorIndex]).slice(0, 5); 
+        this.colorArray2 = customShuffle(this.colors[colorIndex]).slice(0, 5); 
+        this.colorArray1Cloud = customShuffle(this.colors[colorIndex]).slice(0, 5); 
+        this.colorArray2Cloud = customShuffle(this.colors[colorIndex]).slice(0, 5); 
+
+        this.size = constrain(this.size, 30, 100);
+        this.octaves = constrain(this.octaves, 1, 8);
+        this.octavesCloud = constrain(this.octavesCloud, 1, 4);
+     
+    }
+      
+    
       [this.texture, this.cloudTexture] = ([
         this.genTexture(this.seedX, this.seedY, this.colorArray1, this.colorArray2, this.octaves),
         this.genTextureCloud(this.seedXCloud, this.seedYCloud, this.colorArray1Cloud, this.colorArray2Cloud, this.octavesCloud)
       ]);
-    }
+    
   }
+}
 
 // population class, basically a list of planets
 class Population {
@@ -234,8 +244,8 @@ class Population {
            let nz = cos(lat);                   
            let n = 0;
            let amplitude = 0.5;                  
-           for(let i = 0; i < octavesCloud; i++) {
-            n += amplitude * noise(seedX + nx * pow(2, i), seedY + ny * pow(2, i), nz * pow(2, i) + 1)/2;
+           for(let c = 0; c < octavesCloud; c++) {
+            n += amplitude * noise(seedX + nx * pow(2, c), seedY + ny * pow(2, c), nz * pow(2, c) + 1)/2;
                amplitude *= 0.5;
            }                
             
@@ -395,6 +405,4 @@ class Population {
           population.createNewGeneration();      
     } 
     
-  }
-
- 
+  } 
